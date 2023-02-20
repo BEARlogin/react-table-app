@@ -1,8 +1,8 @@
 import Table from '../ui/Table/Table'
-import TableHead, { TableHeadItem } from '../ui/Table/TableHead'
+import TableHead from '../ui/Table/TableHead'
 import TableBody from '../ui/Table/TableBody'
 import TableRow from '../ui/Table/TableRow'
-import { ChangeEvent, SyntheticEvent, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState, MouseEvent as ME, FC } from 'react'
 import { User } from '../domain/models/User'
 import { Entity } from '../domain/types/Entity'
 import { usersRepository } from '../domain/repository/UsersLocalRepository'
@@ -13,12 +13,13 @@ import { UserFieldType } from './types/UserFieldType'
 import UserFormCreate from './UserFormCreate'
 import { Id } from '../domain/types/Id'
 import TableHeader from '../ui/Table/TableHeader'
-import { FormInput } from '../ui/Form'
+import UsersSearch from './UsersSearch'
 
-const UsersTable = () => {
+const UsersTable: FC = () => {
   const [users, setUsers] = useState<Entity<User>[]>([])
   const [editUserId, setEditUserId] = useState<Id | null>(null)
   const editUser = useRef<Partial<User> | null>(null)
+  const [hoverIndex, setHoverIndex] = useState<number|null>(null)
 
   useEffect(() => {
     setUsers(usersRepository.get())
@@ -73,14 +74,14 @@ const UsersTable = () => {
       },
       code: 'photo',
       type: UserFieldType.IMAGE
+    },
+    {
+      header: {
+        title: 'Actions'
+      },
+      key: 'actions'
     }
   ]
-
-  function getHeaders () {
-    return [...dataSchema.map(item => item.header), {
-      title: 'Actions'
-    }]
-  }
 
   function onChange (e: ChangeEvent<HTMLInputElement>, code: keyof User) {
     if (!editUser.current) {
@@ -96,40 +97,50 @@ const UsersTable = () => {
     setEditUserId(null)
   }
 
-  // type KeysWithValsOfType<T, V> = keyof { [ K in keyof T as T[K] extends V ? K : never ] : K };
+  function filterField (search: string) {
+    const searches = search.split(' ')
 
-  function filterField (search: string, field: 'firstName' | 'lastName') {
-    setUsers(usersRepository.get().filter(user => user[field].indexOf(search) !== -1))
+    setUsers(usersRepository.get().filter(user => [user.firstName, user.lastName].some(field => searches.some(s => field.indexOf(s) !== -1))))
+  }
+
+  function onMouseEnter (index: number) {
+    console.log('onMouseEnter')
+    setHoverIndex(index)
+  }
+
+  function onMouseLeave () {
+    console.log('onMouseLeave')
+    setHoverIndex(null)
   }
 
   return (
         <div>
+            <UsersSearch onChange={(e) => filterField(e.target.value)} />
             <Table>
                 <TableHead>
-                  {dataSchema.map(({ header: { title, filter, sort }, code }, index) => (<TableHeader key={index}>
-                    {title}
-                    {filter && <FormInput onChange={(e) => filterField(e.target.value, code)} />}
-                  </TableHeader>))}
+                  {dataSchema.map(({ header: { title, filter, sort }, code }, index) =>
+                    (<TableHeader key={index}>{title}</TableHeader>))}
                 </TableHead>
                 <TableBody>
-                  {users.length > 0 && users.map((user) => <TableRow key={user.id}>
-                    {dataSchema.map(item => <TableCol key={item.code}>
-                      <UserField
+                  {users.length > 0 && users.map((user, index) => <TableRow onMouseEnter={(e) => onMouseEnter(index)} onMouseLeave={() => onMouseLeave()} key={user.id}>
+                    {dataSchema.filter(item => item.code).map(item => <TableCol key={item.code}>
+                      {item.code && <UserField
                           onChange={item.code === 'id'
                             ? undefined
                             : (e) => onChange(e, item.code as keyof User)}
                           edit={!item.readonly && editUserId === user.id}
-                          type={item.type} value={user[item.code]} />
+                          type={item.type} value={user[item.code]} />}
                     </TableCol>)}
-                    <TableCol>
-                      <button className={'button'} onClick={() => deleteUser(user.id)}>delete</button><br />
+                    <TableCol key={'actions'}>
+                      <button className={'btn btn-error'} onClick={() => deleteUser(user.id)}>delete</button><br />
                       {!editUserId
-                        ? <button className={'button'} onClick={() => setEditUserId(user.id)}>edit </button>
-                        : <button className={'button'} onClick={() => saveUser()}>save </button>}
+                        ? <button className={'btn'} onClick={() => setEditUserId(user.id)}>edit </button>
+                        : <button className={'btn'} onClick={() => saveUser()}>save </button>}
                     </TableCol>
                   </TableRow>)}
                 </TableBody>
             </Table>
+            { hoverIndex !== null && <div className={'alert alert-info'}>Вы навели на ячейку {hoverIndex}</div> }
             <UserFormCreate onCreate={user => onAddUser(user)} />
         </div>
   )

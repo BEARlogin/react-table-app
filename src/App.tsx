@@ -3,7 +3,7 @@ import UsersTable from './components/UsersTable'
 
 function App () {
   return (
-    <div className="App">
+    <div className="App container mx-auto">
       <UsersTable />
     </div>
   )

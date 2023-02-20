@@ -3,7 +3,8 @@ import { User } from '../../domain/models/User'
 import { UserFieldType } from './UserFieldType'
 
 export type UsersTableSchemaItem = {
-    code: keyof Entity<User>;
+    code?: keyof Entity<User>;
+    key?: string;
     type?: UserFieldType;
     header: {
         title: string;

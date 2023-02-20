@@ -1,12 +1,14 @@
-import { FC, ReactNode } from 'react'
+import { FC, MouseEventHandler, ReactNode } from 'react'
 
 export type TableRowProps = {
-    children: ReactNode
+    children: ReactNode;
+    onMouseEnter?: MouseEventHandler<HTMLTableRowElement>,
+    onMouseLeave?: MouseEventHandler<HTMLTableRowElement>,
 }
 
-const TableRow: FC<TableRowProps> = ({ children }) => {
+const TableRow: FC<TableRowProps> = ({ children, onMouseEnter, onMouseLeave }) => {
   return (
-        <tr>
+        <tr onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} >
             {children}
         </tr>
   )
